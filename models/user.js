@@ -1,29 +1,83 @@
 /** User class for message.ly */
 
-
+const db = require("../db");
+const ExpressError = require("../expressError");
+const bcrpyt = require("bcrypt");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 
 /** User of the site. */
 
 class User {
-
   /** register new user -- returns
    *    {username, password, first_name, last_name, phone}
    */
 
-  static async register({username, password, first_name, last_name, phone}) { }
+  static async register({ username, password, first_name, last_name, phone }) {
+    try {
+      const hashPassword = await bcrpyt.hash(password, BCRYPT_WORK_FACTOR);
+      const result = await db.query(
+        `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+         RETURNING username, password, first_name, last_name, phone
+        `,
+        [username, hashPassword, first_name, last_name, phone]
+      );
+      return result.rows[0];
+    } catch (e) {
+      throw e;
+    }
+  }
 
   /** Authenticate: is this username/password valid? Returns boolean. */
 
-  static async authenticate(username, password) { }
+  static async authenticate(username, password) {
+    try {
+      const result = await db.query(
+        `SELECT password
+         FROM users 
+         WHERE username = $1`,
+        [username]
+      );
+      // console.log(result)
+      const user = result.rows[0];
+
+      if (user.length !== 0) {
+        if ((await bcrpyt.compare(password, user.password)) === true) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      throw e;
+    }
+  }
 
   /** Update last_login_at for user */
 
-  static async updateLoginTimestamp(username) { }
+  static async updateLoginTimestamp(username) {
+    const result = await db.query(
+      `UPDATE users
+       SET last_login_at = NOW()
+       WHERE username = $1`,
+      [username]
+    );
+  }
 
   /** All: basic info on all users:
    * [{username, first_name, last_name, phone}, ...] */
 
-  static async all() { }
+  static async all() {
+    try {
+      const result = await db.query(
+        `SELECT username, first_name, last_name, phone
+         FROM users`
+      );
+
+      return result.rows.map(u => u);
+    } catch (e) {
+      throw e;
+    }
+  }
 
   /** Get: get user by username
    *
@@ -34,7 +88,16 @@ class User {
    *          join_at,
    *          last_login_at } */
 
-  static async get(username) { }
+  static async get(username) {
+    const result = await db.query(
+      `SELECT username, first_name, last_name, phone, join_at, last_login_at
+         FROM users 
+         WHERE username = $1`,
+      [username]
+    );
+
+    return result.rows[0];
+  }
 
   /** Return messages from this user.
    *
@@ -44,7 +107,42 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) { }
+  static async messagesFrom(username) {
+    try {
+      const result = await db.query(
+        `SELECT messages.id, 
+                messages.to_username, 
+                messages.body, 
+                messages.sent_at, 
+                messages.read_at,
+                users.username,
+                users.first_name,
+                users.last_name,
+                users.phone
+  
+        FROM messages 
+        JOIN users 
+        ON messages.to_username = users.username
+        WHERE messages.from_username = $1`,
+        [username]
+      );
+
+      return result.rows.map(obj => ({
+        id: obj.id,
+        to_user: {
+          username: obj.username,
+          first_name: obj.first_name,
+          last_name: obj.last_name,
+          phone: obj.phone
+        },
+        body: obj.body,
+        sent_at: obj.sent_at,
+        read_at: obj.read_at
+      }));
+    } catch (e) {
+      throw e;
+    }
+  }
 
   /** Return messages to this user.
    *
@@ -54,8 +152,42 @@ class User {
    *   {id, first_name, last_name, phone}
    */
 
-  static async messagesTo(username) { }
-}
+  static async messagesTo(username) {
+    // try {
+    const result = await db.query(
+      `SELECT messages.id, 
+                messages.from_username, 
+                messages.body, 
+                messages.sent_at, 
+                messages.read_at,
+                users.username,
+                users.first_name,
+                users.last_name,
+                users.phone
+        FROM messages 
+        JOIN users 
+        ON messages.from_username = users.username
+        WHERE messages.to_username = $1`,
+      [username]
+    );
 
+    return result.rows.map(obj => ({
+      id: obj.id,
+      from_user: {
+        username: obj.username,
+        first_name: obj.first_name,
+        last_name: obj.last_name,
+        phone: obj.phone
+      },
+      body: obj.body,
+      sent_at: obj.sent_at,
+      read_at: obj.read_at
+    }));
+
+    // } catch (e){
+    //   throw e;
+    // }
+  }
+}
 
 module.exports = User;
