@@ -2,6 +2,8 @@
 
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
+const db = require("../db");
+
 
 /** Middleware: Authenticate user. */
 
@@ -41,6 +43,36 @@ function ensureCorrectUser(req, res, next) {
   }
 }
 // end
+// TO DO: FIGURE OUT WHY THIS FUNCTION DIDN"T WORK = :}
+
+// async function ensureToFromUser(req, res, next){
+//   console.log("this is in ensureTOFromU")
+//   try{
+
+//     console.log(req.user.username)
+
+//     const result = db.query(
+//       `SELECT to_username, from_username
+//        FROM messages
+//        WHERE to_username = $1
+//        OR from_username = $1`, [req.user.username]);
+      
+
+//     if(result.rows.length !== 0){
+//       return next()
+//     } else {
+//       return next({ status: 401, message: "Unauthorized" });
+//     }
+
+//   } catch (err){
+    
+//     return next({status: 401, message: "Unauthorized"});
+//   }
+
+
+// }
+
+
 
 module.exports = {
   authenticateJWT,

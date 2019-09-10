@@ -5,6 +5,8 @@ const ExpressError = require("../expressError");
 const bcrpyt = require("bcrypt");
 const { BCRYPT_WORK_FACTOR } = require("../config");
 
+
+
 /** User of the site. */
 
 class User {
@@ -31,15 +33,18 @@ class User {
   /** Authenticate: is this username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
-    try {
+    // try {
       const result = await db.query(
         `SELECT password
          FROM users 
          WHERE username = $1`,
         [username]
       );
-      // console.log(result)
       const user = result.rows[0];
+      
+      if(user === undefined){
+        return false; 
+      }
 
       if (user.length !== 0) {
         if ((await bcrpyt.compare(password, user.password)) === true) {
@@ -47,9 +52,9 @@ class User {
         }
       }
       return false;
-    } catch (e) {
-      throw e;
-    }
+    // } catch (e) {
+    //   throw e;
+    // }
   }
 
   /** Update last_login_at for user */
@@ -191,3 +196,7 @@ class User {
 }
 
 module.exports = User;
+
+// tooCooTue Ooloo Day "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InRvb0Nvb1R1ZSIsImlhdCI6MTU2ODEzMjM0OX0.jtNYs7TNInWly1q1cw2qeS6RBPhZiWJx_pcCF4bQhzQ"
+
+//Neo13 Neo Day "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik5lbzEzIiwiaWF0IjoxNTY4MTMyNDUxfQ.F9B-RfxyjWBJoScSH5fc45v1SdnSxJ5gmN20SatZpYY"

@@ -14,7 +14,7 @@ router.post("/login", async function (req, res, next) {
     try {
         const { username, password } = req.body;
         const isUser = await User.authenticate(username, password);
-
+        
         if (isUser) {
             let token = jwt.sign({ username }, SECRET_KEY);
             return res.json({ token });
