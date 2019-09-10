@@ -33,7 +33,7 @@ class User {
   /** Authenticate: is this username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
-    // try {
+    try {
       const result = await db.query(
         `SELECT password
          FROM users 
@@ -52,9 +52,9 @@ class User {
         }
       }
       return false;
-    // } catch (e) {
-    //   throw e;
-    // }
+    } catch (e) {
+      throw e;
+    }
   }
 
   /** Update last_login_at for user */
